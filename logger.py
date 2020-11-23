@@ -9,7 +9,7 @@
 --------------------------------------
 """
 from os import makedirs
-from os.path import basename, exists
+from os.path import exists
 from logging.handlers import RotatingFileHandler
 from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO
 
