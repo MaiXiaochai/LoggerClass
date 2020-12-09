@@ -23,6 +23,10 @@ class Logger:
         :param filename:        日志名称，默认为 'test'
         :param max_size:        单个日志文件最大大小，单位 MB
         :param backup_count:    除正名称为filename的文件外, 备份日志的数量
+
+        说明：
+            1）默认只对级别 >= INFO 的日志才会进行log操作，可通过设置 self.log_level值来修改
+            2）其它更多更进一步的设置， 请在 "log参数设置" 区进行设置
         """
         # ===========================[ 处理参数值 ]===========================
         log_dir = log_dir or '.'
@@ -44,7 +48,7 @@ class Logger:
         self.encoding = "utf-8"
 
         # ≥ log_level 级别才会被log
-        self.log_level = DEBUG
+        self.log_level = INFO
 
         # ≥ file_log_level 级别才会被记录到文件
         self.file_log_level = INFO
