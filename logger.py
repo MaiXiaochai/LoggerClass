@@ -38,10 +38,10 @@ class Logger:
         # log 文件绝对路径
         self.log_file_path = "{}{}".format(log_dir, self.filename)
 
-        max_size = max_size or 10
+        max_size = max_size or 256
         self.max_size = max_size * 1024 ** 2
 
-        self.backup_count = backup_count or 10
+        self.backup_count = backup_count or 4
 
         # ===========================[ log参数设置 ]===========================
         # 一些默认的设置
