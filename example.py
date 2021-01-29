@@ -17,7 +17,7 @@ def demo():
 
     log = Logger().log
     print()
-    for i in range(10):
+    for i in range(5):
         sleep(0.5)
         log.info(i)
 
