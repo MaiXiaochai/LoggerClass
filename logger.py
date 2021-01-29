@@ -8,16 +8,21 @@
 @CreatedOn  : 2020/11/23 13:50
 --------------------------------------
 """
+from logging import getLogger, StreamHandler, Formatter, INFO
+from logging.handlers import RotatingFileHandler
 from os import makedirs
 from os.path import exists, join as path_join, dirname, basename
-from logging.handlers import RotatingFileHandler
-from logging import getLogger, StreamHandler, Formatter, DEBUG, INFO
 
 
 class Logger:
     """ 封装的用于类的通用功能"""
 
-    def __init__(self, log_dir: str = None, filename: str = None, max_size: float = None, backup_count: int = None):
+    def __init__(
+            self,
+            log_dir: str = None,
+            filename: str = None,
+            max_size: float or int = None,
+            backup_count: int = None):
         """
         :param log_dir:         保存日志的目录
         :param filename:        日志名称，默认为该类所在的文件的 文件名.log
