@@ -59,8 +59,9 @@ class Logger:
 
         # ≥ print_log_level 级别才会被打印到屏幕
         self.print_level = INFO
-
-        self.formatter = "[ %(asctime)s ][ %(levelname)s ][ %(filename)s:%(funcName)s:%(lineno)d ][ %(message)s ]"
+        
+        # %(funcName)s，函数名
+        self.formatter = "[ %(asctime)s ][ %(levelname)s ][ %(filename)s:%(lineno)d ][ %(message)s ]"
 
         # log_dir 目录，如果不存在则创建
         self.__check_dirs(log_dir)
