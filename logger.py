@@ -59,9 +59,10 @@ class Logger:
 
         # ≥ print_log_level 级别才会被打印到屏幕
         self.print_level = INFO
-        
+
         # %(funcName)s，函数名
-        self.formatter = "[ %(asctime)s ][ %(levelname)s ][ %(filename)s:%(lineno)d ][ %(message)s ]"
+        # %(filename)s:%(lineno)d，文件名:行号
+        self.formatter = "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]"
 
         # log_dir 目录，如果不存在则创建
         self.__check_dirs(log_dir)
@@ -71,10 +72,10 @@ class Logger:
 
         # log文件
         rotating_file_handler = RotatingFileHandler(
-                filename=self.log_file_path,
-                maxBytes=self.max_size,
-                backupCount=self.backup_count,
-                encoding=self.encoding
+            filename=self.log_file_path,
+            maxBytes=self.max_size,
+            backupCount=self.backup_count,
+            encoding=self.encoding
         )
         rotating_file_handler.setLevel(self.file_log_level)
         rotating_file_handler.setFormatter(formatter)
