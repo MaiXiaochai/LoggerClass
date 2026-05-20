@@ -4,8 +4,8 @@
 --------------------------------------
 @File       : logger.py
 @Author     : maixiaochai
-@Email      : maixiaochai@outlook.com
-@CreatedOn  : 2020/11/23 13:50
+@CreatedOn  : 2020/11/23
+@modified   : 2026/05/21
 --------------------------------------
 """
 from logging import getLogger, StreamHandler, Formatter, INFO
@@ -69,27 +69,29 @@ class Logger:
 
     def __get_logger(self):
         formatter = Formatter(self.formatter)
-
-        # log文件
-        rotating_file_handler = RotatingFileHandler(
-            filename=self.log_file_path,
-            maxBytes=self.max_size,
-            backupCount=self.backup_count,
-            encoding=self.encoding
-        )
-        rotating_file_handler.setLevel(self.file_log_level)
-        rotating_file_handler.setFormatter(formatter)
-
-        # log print
-        stream_handler = StreamHandler()
-        stream_handler.setLevel(self.print_level)
-        stream_handler.setFormatter(formatter)
-
         logger = getLogger()
 
-        logger.setLevel(self.log_level)
-        logger.addHandler(stream_handler)
-        logger.addHandler(rotating_file_handler)
+        # 关键：避免重复添加 Handler
+        if not logger.handlers:
+            logger.setLevel(self.log_level)
+
+            # log文件
+            rotating_file_handler = RotatingFileHandler(
+                filename=self.log_file_path,
+                maxBytes=self.max_size,
+                backupCount=self.backup_count,
+                encoding=self.encoding
+            )
+            rotating_file_handler.setLevel(self.file_log_level)
+            rotating_file_handler.setFormatter(formatter)
+
+            # log print
+            stream_handler = StreamHandler()
+            stream_handler.setLevel(self.print_level)
+            stream_handler.setFormatter(formatter)
+
+            logger.addHandler(stream_handler)
+            logger.addHandler(rotating_file_handler)
 
         return logger
 
