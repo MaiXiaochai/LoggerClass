@@ -19,6 +19,8 @@ from os.path import exists, join as path_join, dirname, basename
 class Logger:
     """封装的用于类的通用日志功能"""
 
+    _instance_counter = 0
+
     def __init__(
             self,
             log_dir: str = None,
@@ -39,6 +41,10 @@ class Logger:
         caller_frame = inspect.stack()[1]
         caller_file = caller_frame.filename
         self._caller_module = caller_frame.frame.f_globals.get('__name__', '')
+
+        # 确保每个实例有唯一标识
+        Logger._instance_counter += 1
+        self._instance_id = Logger._instance_counter
 
         # ===========================[ 处理参数值 ]===========================
         log_dir = log_dir or path_join(dirname(caller_file), 'logs')
@@ -75,7 +81,7 @@ class Logger:
                     formatter = Formatter(self.formatter)
 
                     # 使用命名 logger 避免干扰根 logger
-                    logger = getLogger(f"{self._caller_module}.Logger")
+                    logger = getLogger(f"{self._caller_module}.Logger.{self._instance_id}")
                     logger.setLevel(self.log_level)
 
                     # log文件
