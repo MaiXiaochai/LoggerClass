@@ -70,7 +70,6 @@ class Logger:
         # log_dir 目录，如果不存在则创建
         self.__check_dirs(log_dir)
 
-        # 线程安全
         self._lock = threading.Lock()
         self._logger = None
 
@@ -78,33 +77,30 @@ class Logger:
         if self._logger is None:
             with self._lock:
                 if self._logger is None:
-                    formatter = Formatter(self.formatter)
-
-                    # 使用命名 logger 避免干扰根 logger
-                    logger = getLogger(f"{self._caller_module}.Logger.{self._instance_id}")
-                    logger.setLevel(self.log_level)
-
-                    # log文件
-                    rotating_file_handler = RotatingFileHandler(
-                        filename=self.log_file_path,
-                        maxBytes=self.max_size,
-                        backupCount=self.backup_count,
-                        encoding=self.encoding
-                    )
-                    rotating_file_handler.setLevel(self.file_log_level)
-                    rotating_file_handler.setFormatter(formatter)
-
-                    # log print
-                    stream_handler = StreamHandler()
-                    stream_handler.setLevel(self.print_level)
-                    stream_handler.setFormatter(formatter)
-
-                    logger.addHandler(stream_handler)
-                    logger.addHandler(rotating_file_handler)
-
-                    self._logger = logger
-
+                    self._logger = self._setup_logger()
         return self._logger
+
+    def _setup_logger(self):
+        fmt = Formatter(self.formatter)
+        logger = getLogger(f"{self._caller_module}.Logger.{self._instance_id}")
+        logger.setLevel(self.log_level)
+
+        file_handler = RotatingFileHandler(
+            filename=self.log_file_path,
+            maxBytes=self.max_size,
+            backupCount=self.backup_count,
+            encoding=self.encoding
+        )
+        file_handler.setLevel(self.file_log_level)
+        file_handler.setFormatter(fmt)
+
+        stream_handler = StreamHandler()
+        stream_handler.setLevel(self.print_level)
+        stream_handler.setFormatter(fmt)
+
+        logger.addHandler(stream_handler)
+        logger.addHandler(file_handler)
+        return logger
 
     @staticmethod
     def __check_dirs(dir_path: str):
