@@ -5,9 +5,11 @@
 @File       : logger.py
 @Author     : maixiaochai
 @CreatedOn  : 2020/11/23
-@modified   : 2026/05/21
+@modified   : 2026/05/24
 --------------------------------------
 """
+import inspect
+import threading
 from logging import getLogger, StreamHandler, Formatter, INFO
 from logging.handlers import RotatingFileHandler
 from os import makedirs
@@ -15,28 +17,33 @@ from os.path import exists, join as path_join, dirname, basename
 
 
 class Logger:
-    """ 封装的用于类的通用功能"""
+    """封装的用于类的通用日志功能"""
 
     def __init__(
             self,
             log_dir: str = None,
             filename: str = None,
-            max_size: float or int = None,
+            max_size: float | int = None,
             backup_count: int = None):
         """
-        :param log_dir:         保存日志的目录
-        :param filename:        日志名称，默认为该类所在的文件的 文件名.log
-        :param max_size:        单个日志文件最大大小，单位 MB
-        :param backup_count:    除名称为 filename的文件外, 备份日志的数量
+        :param log_dir:     保存日志的目录，默认在调用方文件同级 logs/ 目录下
+        :param filename:    日志名称，默认使用调用方文件名.log
+        :param max_size:    单个日志文件最大大小，单位 MB
+        :param backup_count: 除名称为 filename 的文件外, 备份日志的数量
 
         说明：
-            1）默认只对级别 >= INFO 的日志才会进行log操作，可通过设置 self.log_level值来修改
-            2）其它更多更进一步的设置， 请在 "log参数设置" 区进行设置
+            1）默认只对级别 >= INFO 的日志才会进行log操作，可通过设置 self.log_level 值来修改
+            2）其它更多更进一步的设置，请在 "log参数设置" 区进行设置
         """
-        # ===========================[ 处理参数值 ]===========================
-        log_dir = log_dir or path_join(dirname(__file__), 'logs')
+        # 获取调用方的文件信息
+        caller_frame = inspect.stack()[1]
+        caller_file = caller_frame.filename
+        self._caller_module = caller_frame.frame.f_globals.get('__name__', '')
 
-        filename = filename or basename(__file__)
+        # ===========================[ 处理参数值 ]===========================
+        log_dir = log_dir or path_join(dirname(caller_file), 'logs')
+
+        filename = filename or basename(caller_file)
         self.filename = self.__check_log_suffix(filename)
 
         # log 文件绝对路径
@@ -48,52 +55,50 @@ class Logger:
         self.backup_count = backup_count or 8
 
         # ===========================[ log参数设置 ]===========================
-        # 一些默认的设置
         self.encoding = "utf-8"
-
-        # ≥ log_level 级别才会被log
         self.log_level = INFO
-
-        # ≥ file_log_level 级别才会被记录到文件
         self.file_log_level = INFO
-
-        # ≥ print_log_level 级别才会被打印到屏幕
         self.print_level = INFO
-
-        # %(funcName)s，函数名
-        # %(filename)s:%(lineno)d，文件名:行号
         self.formatter = "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]"
 
         # log_dir 目录，如果不存在则创建
         self.__check_dirs(log_dir)
 
+        # 线程安全
+        self._lock = threading.Lock()
+        self._logger = None
+
     def __get_logger(self):
-        formatter = Formatter(self.formatter)
-        logger = getLogger()
+        if self._logger is None:
+            with self._lock:
+                if self._logger is None:
+                    formatter = Formatter(self.formatter)
 
-        # 关键：避免重复添加 Handler
-        if not logger.handlers:
-            logger.setLevel(self.log_level)
+                    # 使用命名 logger 避免干扰根 logger
+                    logger = getLogger(f"{self._caller_module}.Logger")
+                    logger.setLevel(self.log_level)
 
-            # log文件
-            rotating_file_handler = RotatingFileHandler(
-                filename=self.log_file_path,
-                maxBytes=self.max_size,
-                backupCount=self.backup_count,
-                encoding=self.encoding
-            )
-            rotating_file_handler.setLevel(self.file_log_level)
-            rotating_file_handler.setFormatter(formatter)
+                    # log文件
+                    rotating_file_handler = RotatingFileHandler(
+                        filename=self.log_file_path,
+                        maxBytes=self.max_size,
+                        backupCount=self.backup_count,
+                        encoding=self.encoding
+                    )
+                    rotating_file_handler.setLevel(self.file_log_level)
+                    rotating_file_handler.setFormatter(formatter)
 
-            # log print
-            stream_handler = StreamHandler()
-            stream_handler.setLevel(self.print_level)
-            stream_handler.setFormatter(formatter)
+                    # log print
+                    stream_handler = StreamHandler()
+                    stream_handler.setLevel(self.print_level)
+                    stream_handler.setFormatter(formatter)
 
-            logger.addHandler(stream_handler)
-            logger.addHandler(rotating_file_handler)
+                    logger.addHandler(stream_handler)
+                    logger.addHandler(rotating_file_handler)
 
-        return logger
+                    self._logger = logger
+
+        return self._logger
 
     @staticmethod
     def __check_dirs(dir_path: str):
@@ -103,12 +108,10 @@ class Logger:
 
     @staticmethod
     def __check_log_suffix(log_name: str) -> str:
-        """确保log_name是以'.log'"""
+        """确保log_name以'.log'结尾"""
         suffix = '.log'
-
         if not log_name.endswith(suffix):
             log_name = f"{log_name}{suffix}"
-
         return log_name
 
     @property
