@@ -1,59 +1,87 @@
 # LoggerClass
 
-用`Python`内置的`logging`库封装的日志功能。按日志文件大小卷动备份，简单易用。`class`版。
+基于 Python 内置 `logging` 封装的日志类。按文件大小自动卷动备份，简单够用。
 
-### 使用说明
+## 快速开始
 
-1. #### 日志样式
-    ```shell
-    [ 2021-01-29 13:49:34,180 ][ INFO ][ 4 ]
-    ```
-    + ##### 样式说明
-        + 时间：`[ 2021-01-29 13:49:34,180 ]`
-        + 日志级别：`[ INFO ]`
-        + 日志内容：`[ 4 ]`
+```python
+from logger import Logger
 
-2. #### 参数说明
-    + ##### 所有参数均为可选参数
-    + ##### 参数详解
-        + ##### `log_dir`
-            + 日志文件存放的目录
-            + 默认值：同级目录下的`logs`目录
-        + ##### `filename`
-            + 日志文件的名称
-            + 默认值：调用方文件名`.log`（如从 `demo.py` 调用，则日志文件为 `demo.py.log`）
-        + ##### `max_size`
-            + 单个日志文件最大值(单位`MB`)，达到这个值会自动进行备份
-            + 默认值：`64`
-        + ##### `backup_count`
-            + 日志文件最大备份数量(不包含`.log`后缀的文件)
-            + 默认值：`8`
+log = Logger().log
+log.info("你好")
+```
 
-3. #### 使用例子
-   [example.py（点击跳转到源码）](example.py)
-   ```python
-   from logger import Logger
-   
-   
-   def demo():
-       from time import sleep
-   
-       log = Logger().log
-   
-       for i in range(5):
-           sleep(0.5)
-           log.info(i)
-   
-   
-   if __name__ == '__main__':
-       demo()
-   
-   """
-   example.py.log 内容：
-   [ 2021-01-29 13:49:32,178 ][ INFO ][ 0 ]
-   [ 2021-01-29 13:49:32,679 ][ INFO ][ 1 ]
-   [ 2021-01-29 13:49:33,180 ][ INFO ][ 2 ]
-   [ 2021-01-29 13:49:33,680 ][ INFO ][ 3 ]
-   [ 2021-01-29 13:49:34,180 ][ INFO ][ 4 ]
-   """
-   ```
+输出：
+```
+[ 2026-05-24 06:32:38,778 ][ INFO ][ 你好 ]
+```
+
+## 日志格式
+
+```
+[ 时间 ][ 级别 ][ 内容 ]
+```
+
+可通过 `self.formatter` 自定义，详见下方"高级配置"。
+
+## 参数
+
+所有参数均为可选。
+
+| 参数 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `log_dir` | `str` | 调用方同级 `logs/` 目录 | 日志文件存放目录 |
+| `filename` | `str` | 调用方文件名 `.log` | 如从 `demo.py` 调用则为 `demo.py.log` |
+| `max_size` | `float \| int` | `64` | 单个日志文件最大值，单位 MB |
+| `backup_count` | `int` | `8` | 备份文件数量（不含当前 `.log` 文件） |
+
+## 高级配置
+
+实例化后可直接修改以下属性，在首次调用 `.log` 前设置即可：
+
+```python
+logger = Logger()
+logger.log_level = DEBUG        # 日志器级别，≥ 此级别才处理
+logger.file_log_level = INFO    # 写入文件的级别
+logger.print_level = WARNING    # 屏幕输出的级别
+logger.formatter = "[ %(asctime)s ][ %(levelname)s ][ %(message)s ]"
+logger.encoding = "utf-8"
+
+log = logger.log
+```
+
+## 使用场景
+
+### 自定义路径和大小
+
+```python
+log = Logger(
+    log_dir="./my_logs",
+    filename="app.log",
+    max_size=128,      # 128MB
+    backup_count=5
+).log
+```
+
+### 仅输出到屏幕特定级别
+
+```python
+logger = Logger()
+logger.print_level = WARNING  # 屏幕只显示 WARNING 及以上
+
+log = logger.log
+log.debug("不会显示")
+log.info("不会显示")
+log.warning("会显示")
+```
+
+### 多实例独立日志
+
+```python
+# 每个实例有独立的日志文件，互不干扰
+api_log = Logger(filename="api").log
+db_log = Logger(filename="database").log
+
+api_log.info("API 请求")
+db_log.error("数据库错误")
+```
